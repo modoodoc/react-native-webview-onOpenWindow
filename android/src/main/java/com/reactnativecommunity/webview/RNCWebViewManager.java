@@ -312,6 +312,16 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
     mLackPermissionToDownloadMessage = message;
   }
 
+  @ReactProp(name = "hasOnOpenWindowEvent")
+  public void setHasOnOpenWindowEvent(WebView view, boolean hasEvent) {
+    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+      WebChromeClient client = view.getWebChromeClient();
+      if (client instanceof RNCWebChromeClient) {
+        ((RNCWebChromeClient) client).setHasOnOpenWindowEvent(hasEvent);
+      }
+    }
+  }
+
   @ReactProp(name = "cacheEnabled")
   public void setCacheEnabled(WebView view, boolean enabled) {
     view.getSettings().setCacheMode(enabled ? WebSettings.LOAD_DEFAULT : WebSettings.LOAD_NO_CACHE);
@@ -1243,6 +1253,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
 
     // True if protected media should be allowed, false otherwise
     protected boolean mAllowsProtectedMedia = false;
+    protected boolean hasOnOpenWindowEvent = false;
 
     public RNCWebChromeClient(ReactContext reactContext, WebView webView) {
       this.mReactContext = reactContext;
@@ -1254,20 +1265,22 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
 
       final WebView newWebView = new WebView(view.getContext());
       
-      newWebView.setWebViewClient(new WebViewClient(){
-        @Override
-        public boolean shouldOverrideUrlLoading (WebView subview, String url) {
-          WritableMap event = Arguments.createMap();
-          event.putString("targetUrl", url);
+      if(hasOnOpenWindowEvent) {
+        newWebView.setWebViewClient(new WebViewClient(){
+          @Override
+          public boolean shouldOverrideUrlLoading (WebView subview, String url) {
+            WritableMap event = Arguments.createMap();
+            event.putString("targetUrl", url);
 
-          ((RNCWebView) view).dispatchEvent(
-            view,
-            new TopOpenWindowEvent(view.getId(), event)
-          );
+            ((RNCWebView) view).dispatchEvent(
+              view,
+              new TopOpenWindowEvent(view.getId(), event)
+            );
 
-          return true;
-        }
-      });
+            return true;
+          }
+        });
+      }
 
       final WebView.WebViewTransport transport = (WebView.WebViewTransport) resultMsg.obj;
       transport.setWebView(newWebView);
@@ -1532,6 +1545,9 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
      */
     public void setAllowsProtectedMedia(boolean enabled) {
         mAllowsProtectedMedia = enabled;
+    }
+    public void setHasOnOpenWindowEvent(boolean hasEvent) {
+      hasOnOpenWindowEvent = hasEvent;
     }
   }
 
