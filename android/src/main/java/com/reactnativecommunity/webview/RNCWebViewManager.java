@@ -162,6 +162,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
   protected RNCWebChromeClient mWebChromeClient = null;
   protected boolean mAllowsFullscreenVideo = false;
   protected boolean mAllowsProtectedMedia = false;
+  protected boolean mHasOnOpenWindowEvent = false;
   protected @Nullable String mUserAgent = null;
   protected @Nullable String mUserAgentWithApplicationName = null;
   protected @Nullable String mDownloadingMessage = null;
@@ -314,6 +315,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
 
   @ReactProp(name = "hasOnOpenWindowEvent")
   public void setHasOnOpenWindowEvent(WebView view, boolean hasEvent) {
+    mHasOnOpenWindowEvent = hasEvent;
     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
       WebChromeClient client = view.getWebChromeClient();
       if (client instanceof RNCWebChromeClient) {
@@ -901,6 +903,9 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
           mReactContext.removeLifecycleEventListener(this);
         }
       };
+
+      mWebChromeClient.setHasOnOpenWindowEvent(mHasOnOpenWindowEvent);
+      webView.setWebChromeClient(mWebChromeClient);
     } else {
       if (mWebChromeClient != null) {
         mWebChromeClient.onHideCustomView();
@@ -912,6 +917,9 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
           return Bitmap.createBitmap(50, 50, Bitmap.Config.ARGB_8888);
         }
       };
+
+      mWebChromeClient.setHasOnOpenWindowEvent(mHasOnOpenWindowEvent);
+      webView.setWebChromeClient(mWebChromeClient);
     }
     mWebChromeClient.setAllowsProtectedMedia(mAllowsProtectedMedia);
     webView.setWebChromeClient(mWebChromeClient);
