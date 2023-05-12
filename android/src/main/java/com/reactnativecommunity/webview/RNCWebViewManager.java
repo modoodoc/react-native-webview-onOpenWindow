@@ -7,6 +7,7 @@ import android.app.DownloadManager;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.Manifest;
@@ -95,6 +96,7 @@ import java.lang.IllegalArgumentException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -1023,6 +1025,40 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
     @Override
     public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
       final String url = request.getUrl().toString();
+      Log.d(TAG, url);
+
+    if (url == null || url.startsWith("http://") || url.startsWith("https://")) {
+      Log.d(TAG, "url is not intent");
+      return this.shouldOverrideUrlLoading(view, url);
+    }
+
+    try {
+      Intent intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME);
+      ReactContext mReactContext = (ReactContext) view.getContext();
+      PackageManager packageManager = mReactContext.getPackageManager();
+
+      if (intent.resolveActivity(packageManager) != null) {
+        Log.d(TAG, "has APP");
+        mReactContext.startActivity(intent);
+        Log.d(TAG, "ACTIVITY: ${intent.`package`}");
+        return true;
+      }
+
+      String fallbackUrl = intent.getStringExtra("browser_fallback_url");
+      if (fallbackUrl != null) {
+        Log.d(TAG, "has fallbackUrl");
+        view.loadUrl(fallbackUrl);
+        Log.d(TAG, "FALLBACK: $fallbackUrl");
+        return true;
+      }
+
+      Log.e(TAG, "Could not parse anythings");
+
+
+    } catch (URISyntaxException e) {
+      Log.e(TAG, "Invalid intent request", e);
+    }
+
       return this.shouldOverrideUrlLoading(view, url);
     }
 
